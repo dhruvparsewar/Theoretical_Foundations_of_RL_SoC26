@@ -1,0 +1,83 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{SARSA and Q-Learning Updates}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+We know Temporal Update goes like this:
+$$ \text{New Estimate} \leftarrow \text{Old Estimate} + \alpha [\text{Target} - \text{Old Estimate}] $$
+
+\noindent For action-value functions:
+$$ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha [\text{TD Target} - Q(S_t, A_t)] $$
+
+\subsection*{SARSA}
+\begin{itemize}[label=$\bullet$]
+    \item It stands for State Action Reward State Action.
+    \item It updates the action-value function ($Q(S,A)$).
+    \item It evaluates how good it is for an agent to take a specific action in a specific state, assuming the agent continues to follow its current policy.
+\end{itemize}
+
+\noindent\textbf{Derivation:} \\
+SARSA is derived from the Bellman Expectation Equation:
+$$ q_\pi(s,a) = \mathbb{E}_\pi \left[ R_{t+1} + \gamma q_\pi(S_{t+1}, A_{t+1}) \mid S_t=s, A_t=a \right] $$
+
+\begin{itemize}[label=$\bullet$]
+    \item SARSA samples the environment.
+    \item Agent takes an action, observes $R_{t+1}$, lands in $S_{t+1}$ and then uses its current policy to select $A_{t+1}$.
+\end{itemize}
+
+$$ \text{TD Target}_{\text{SARSA}} = R_{t+1} + \gamma Q(S_{t+1}, A_{t+1}) $$
+$$ \therefore Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \left[ R_{t+1} + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t) \right] $$
+
+\vspace{0.5cm}
+
+\subsection*{Q-Learning}
+\begin{itemize}[label=$\bullet$]
+    \item Its goal is to directly approximate the optimal policy $q^*$ instead of evaluating the current policy.
+\end{itemize}
+
+\noindent Q-learning is also derived from Bellman Expectation Equation:
+$$ q^*(s,a) = \mathbb{E} \left[ R_{t+1} + \gamma \max_{a'} q_\pi(S_{t+1}, a') \mid S_t=s, A_t=a \right] $$
+
+\begin{itemize}[label=$\bullet$]
+    \item Again we sample the environment.
+    \item However, instead of waiting to see what action the agent actually takes next, we look at all possible actions in $S_{t+1}$ and select one with the highest estimated Q-value.
+\end{itemize}
+
+$$ \text{TD Target}_{\text{Q-Learning}} = R_{t+1} + \gamma \max_a Q(S_{t+1}, a) $$
+$$ \therefore Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \left[ R_{t+1} + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t) \right] $$
+
+
+
+\section*{Comparison: SARSA vs. Q-Learning}
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{| p{0.18\textwidth} | p{0.35\textwidth} | p{0.35\textwidth} |}
+\hline
+\textbf{Feature} & \textbf{SARSA} & \textbf{Q-Learning} \\ \hline
+\textbf{Policy Type} &  Learns the value of the policy it is currently executing. & Learns the value of the optimal policy independently of the agent's actions. \\ \hline
+\textbf{TD Target} & $R_{t+1} + \gamma Q(S_{t+1}, A_{t+1})$ & $R_{t+1} + \gamma \max_a Q(S_{t+1}, a)$ \\ \hline
+\textbf{Action Selection} & Requires knowing the \textit{actual} next action ($A_{t+1}$) before updating. & Only requires knowing the next state ($S_{t+1}$) to find the max action. \\ \hline
+\textbf{Risk} & Learns safer policies if exploration is high. &Learns the optimal path even if it's dangerous during exploration. \\ \hline
+\textbf{Performance} & Accumulates more reward during training because it avoids fatal failures. & Accumulates less reward during training if the optimal path is near severe penalties. \\ \hline
+\textbf{Convergence} & Converges to the optimal policy \textit{only if} the exploration rate ($\epsilon$) slowly decays to 0. & Converges to the optimal policy as long as all state-action pairs are visited infinitely often. \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}

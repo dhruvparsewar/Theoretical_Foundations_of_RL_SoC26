@@ -1,0 +1,185 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Dynamic Programming Algorithms}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+\subsection*{1) Policy Evaluation}
+Policy evaluation is the process of calculating the state-value function ($V^\pi(s)$). It tells us the goodness or badness of a certain policy ($\pi$). For this, we use the Bellman Expectation Equation for the state-value function:
+$$V_{k+1}(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r | s, a) \left[ r + \gamma V_k(s') \right]$$
+
+\noindent\textbf{Pseudocode:}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Input:}
+    \begin{itemize}[label=$\circ$]
+        \item The policy $\pi$ which we want to evaluate.
+        \item An estimation threshold $\theta > 0$ to determine the accuracy of our estimation.
+        \item Transition probabilities / Transition Matrix.
+        \item Discount factor $\gamma \in [0,1]$.
+    \end{itemize}
+    \item \textbf{Process:}
+    \begin{itemize}[label=$\circ$]
+        \item Set the value of every state arbitrarily.
+        \item Set the value of the terminal state to 0.
+        \item Set $\Delta$ to 0.
+        \item \textbf{Loop} until $\Delta < \theta$:
+        \begin{itemize}[label=--]
+            \item For each state in the state space:
+            \item Store the current value of the state in a variable.
+            \item Update the value of the state using the Bellman Expectation Equation.
+            \item Check how much the state's value changed.
+            \item Set $\Delta \leftarrow \max(\text{current } \Delta, \text{absolute difference between the old and new state value})$.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Output:} The final value of each state, which is now a close approximation of the value function $V^\pi(s)$ for the given policy.
+\end{itemize}
+
+\subsection*{2) Policy Iteration}
+Policy Iteration is an algorithm used to discover the optimal policy.
+
+\newpage
+\noindent\textbf{Pseudocode:}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Input:}
+    \begin{itemize}[label=$\circ$]
+        \item An estimation threshold $\theta > 0$ to determine the accuracy of our estimation.
+        \item Transition probabilities / Transition Matrix.
+        \item Discount factor $\gamma \in [0,1]$.
+    \end{itemize}
+    \item \textbf{Process:}
+    \begin{itemize}[label=$\circ$]
+        \item Set the value of every state arbitrarily.
+        \item Set $\Delta$ to 0.
+        \item Start with an arbitrary policy and perform \textbf{Policy Evaluation}.
+        \item Then perform \textbf{Policy Improvement}, for each state:
+        \begin{itemize}[label=--]
+            \item Store the current action and calculate the expected return for all possible actions.
+            \item Select the action with the highest expected return.
+            \item Update the policy to choose this action.
+            \item If the selected action differs from the previous action, mark the policy as unstable.
+        \end{itemize}
+        \item Check whether the policy changed: If no action changed in any state, stop; otherwise, repeat Policy Evaluation with the improved policy.
+    \end{itemize}
+    \item \textbf{Output:} Optimal policy $\pi^*$ and the optimal value function $V^*(s)$ corresponding to that policy.
+\end{itemize}
+
+\subsection*{3) Value Iteration}
+Value Iteration is an algorithm which helps in finding the optimal strategy faster. For this, we use the Bellman Optimality Equation of the state-value function:
+$$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma V_k(s') \right]$$
+
+\noindent\textbf{Pseudocode:}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Input:}
+    \begin{itemize}[label=$\circ$]
+        \item An estimation threshold $\theta > 0$ to determine the accuracy of our estimation.
+        \item Transition probabilities / Transition Matrix.
+        \item Discount factor $\gamma \in [0,1]$.
+    \end{itemize}
+    \item \textbf{Process:}
+    \begin{itemize}[label=$\circ$]
+        \item Set the value of every state arbitrarily.
+        \item Set the value of the terminal state to 0.
+        \item \textbf{Loop} until the maximum change in state values ($\Delta$) becomes smaller than $\theta$:
+        \begin{itemize}[label=--]
+            \item Set $\Delta$ to 0.
+            \item Repeatedly update the value of each state using the Bellman Optimality Equation.
+        \end{itemize}
+        \item Extract the optimal policy by choosing, in each state, the action that yields the highest expected return according to the converged value function.
+    \end{itemize}
+    \item \textbf{Output:} Optimal policy $\pi^*$ and the optimal value function $V^*(s)$ corresponding to that policy.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\section*{Comparison between Monte Carlo (MC) and Temporal Difference (TD)}
+We will take an example of a small toy MDP for this comparison.
+
+\subsection*{Toy MDP Setup}
+Imagine a $2 \times 2$ grid:
+\begin{itemize}[label=$\bullet$]
+    \item Top Left (TL) $\rightarrow$ Top Right (TR)
+    \item Bottom Left (BL) $\rightarrow$ Bottom Right (BR)
+\end{itemize}
+\textbf{BR is our Goal.}
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Actions:} Up, Down, Left, Right.
+    \item \textbf{Rewards:} Every step taken costs $-1$ \& stepping into goal (BR) gives $+10$.
+    \item \textbf{Discount factor ($\gamma$):} $1$ (i.e., no discounting).
+    \item \textbf{Learning Rate ($\alpha$):} $0.5$.
+\end{itemize}
+
+\noindent Initially, $V(TL)=0, V(TR)=0, V(BL)=0, V(BR)=0$.
+
+\vspace{0.3cm}
+\noindent Let's simulate one specific episode starting at BL:
+$$ \text{BL} \xrightarrow{\text{UP}} \text{TL (} R=-1 \text{)} \xrightarrow{\text{RIGHT}} \text{TR (} R=-1 \text{)} \xrightarrow{\text{DOWN}} \text{BR (} R=+10 \text{)} $$
+
+\noindent Now compare between Monte Carlo and Temporal Difference:
+
+\subsection*{1) Monte Carlo (MC) Execution}
+MC must wait until it hits a terminal state as it calculates cumulative return ($G_t$) from each state.
+
+\vspace{0.3cm}
+\noindent\textbf{Work Backwards:}
+\begin{itemize}[label=$\bullet$]
+    \item From TR $\rightarrow$ only one step and total reward is 10. $\therefore G_{TR} = 10$.
+    \item From TL $\rightarrow G_{TL} = (-1) + 10 = 9$.
+    \item From BL $\rightarrow G_{BL} = (-1) + (-1) + 10 = 8$.
+\end{itemize}
+
+\noindent\textbf{Now update the values:}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Update TR} $\rightarrow V(TR) \leftarrow V(TR) + \alpha [G_{TR} - V(TR)]$ \\
+    $V(TR) \leftarrow 0 + 0.5[10 - 0] = 5$
+    \item \textbf{Update TL} $\rightarrow V(TL) \leftarrow V(TL) + \alpha [G_{TL} - V(TL)]$ \\
+    $V(TL) \leftarrow 0 + 0.5[9 - 0] = 4.5$
+    \item \textbf{Update BL} $\rightarrow V(BL) \leftarrow V(BL) + \alpha [G_{BL} - V(BL)]$ \\
+    $V(BL) \leftarrow 0 + 0.5[8 - 0] = 4$
+\end{itemize}
+
+\noindent \textbf{We got:} $V(TR)=5, \ V(TL)=4.5, \ V(BL)=4$.
+
+\subsection*{2) Temporal Difference (TD) Execution}
+TD updates the value immediately after every move.
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{First step (BL $\rightarrow$ TL)} $\rightarrow R + \gamma V(TL) = -1 + 1(0) = -1$ \\
+    $V(BL) \leftarrow V(BL) + 0.5[-1 - 0] = -0.5$
+    \item \textbf{Second step (TL $\rightarrow$ TR)} $\rightarrow R + \gamma V(TR) = -1 + 1(0) = -1$ \\
+    $V(TL) \leftarrow V(TL) + 0.5[-1 - 0] = -0.5$
+    \item \textbf{Third step (TR $\rightarrow$ BR)} $\rightarrow R + \gamma V(BR) = 10 + 1(0) = 10$ \\
+    $V(TR) \leftarrow V(TR) + 0.5[10 - 0] = 5$
+\end{itemize}
+
+\noindent \textbf{We got:} $V(TR)=5, \ V(TL)=-0.5, \ V(BL)=-0.5$.
+
+\subsection*{Value Comparison}
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|c|c|}
+\hline
+& \textbf{MC} & \textbf{TD} \\ \hline
+\textbf{$V(TR)$} & $5$ & $5$ \\ \hline
+\textbf{$V(TL)$} & $4.5$ & $-0.5$ \\ \hline
+\textbf{$V(BL)$} & $4$ & $-0.5$ \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}

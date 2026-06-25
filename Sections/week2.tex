@@ -1,0 +1,235 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{MDPs, Q-Learning, Advanced Algorithms and Bellman Equations}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\vspace{0.5cm}
+\vspace{1cm}
+
+\section{Introduction to Markov Decision Processes (MDPs)}
+
+Markov Decision Processes (MDPs) formally describe an environment for Reinforcement Learning (RL). Almost all problems can be formalized as MDPs:
+\begin{itemize}
+    \item Optimal control primarily deals with continuous MDPs.
+    \item Partially observable problems can be converted into MDPs.
+\end{itemize}
+
+\subsection{State Transition Matrix}
+For a Markov state $s$ and successor state $s'$, the state transition probability is defined by:
+\[ P_{ss'} = \mathbb{P}[S_{t+1} = s' \mid S_t = s] \]
+The state transition matrix $P$ defines the transition probabilities from all states $s$ to the successor state $s'$:
+\[
+P = 
+\begin{bmatrix}
+P_{11} & \dots & P_{1n} \\
+\vdots & \ddots & \vdots \\
+P_{n1} & \dots & P_{nn}
+\end{bmatrix}
+\]
+where the sum of each row is exactly 1.
+
+\subsection{Markov Process \& Markov Reward Process}
+\textbf{Markov Process:} A Markov Process (or Markov Chain) is a tuple $(S, P)$, where:
+\begin{itemize}
+    \item $S$ is a (finite) set of states.
+    \item $P$ is a state transition probability matrix.
+\end{itemize}
+
+\textbf{Markov Reward Process:} It is a Markov Chain with values. It is defined as a tuple $(S, P, R, \gamma)$, where:
+\begin{itemize}
+    \item $S$ is a (finite) set of states.
+    \item $P$ is a state transition probability matrix.
+    \item $R$ is a reward function.
+    \item $\gamma$ is the discount factor, where $\gamma \in [0, 1]$.
+\end{itemize}
+
+\subsection{Return}
+The return is the total discounted reward from time-step $t$. 
+\begin{itemize}
+    \item The discount is the present value of future rewards.
+    \item The value of receiving reward $R$ after $k+1$ steps is $\gamma^k \cdot R$.
+\end{itemize}
+
+% ---------------------------------------------------------
+
+\section{Q-Learning}
+
+Q-Learning is a model-free reinforcement learning algorithm that helps an agent learn how to make the best decisions by interacting with its environment. Instead of needing a model of the environment, the agent learns purely from experience by trying different actions and seeing their results. 
+
+The core idea is that the agent builds a \textbf{Q-table} which stores Q-values. Each Q-value estimates how good it is to take a specific action in a given state in terms of the expected future rewards. Over time, the agent updates this table using the feedback it receives.
+
+\subsection{Key Components}
+\begin{enumerate}
+    \item \textbf{Q-Values:} Represent the expected rewards for taking an action in a specific state. These values are updated over time using the Temporal Difference (TD) update rule.
+    \item \textbf{Rewards:} The feedback the agent needs to evaluate its actions.
+    \item \textbf{Temporal Difference (TD) Update:} The agent updates Q-values using the formula:
+    \[ Q(S, A) \leftarrow Q(S, A) + \alpha \big( R + \gamma Q(S', A') - Q(S, A) \big) \]
+    Where:
+    \begin{itemize}
+        \item $S$ is the current state.
+        \item $A$ is the action taken by the agent.
+        \item $S'$ is the next state the agent moves to.
+        \item $A'$ is the best next action in state $S'$.
+        \item $R$ is the reward received for taking action $A$ in state $S$.
+        \item $\gamma$ (Gamma) is the discount factor which balances immediate and future rewards.
+        \item $\alpha$ (Alpha) is the learning rate determining how much new information affects old Q-values.
+    \end{itemize}
+    \item \textbf{$\epsilon$-greedy Policy (Exploration vs. Exploitation):} Helps the agent decide which action to take based on current Q-value estimates:
+    \begin{itemize}
+        \item \textit{Exploitation:} The agent picks the action with the highest Q-value with probability $1-\epsilon$.
+        \item \textit{Exploration:} With probability $\epsilon$, the agent picks a random action, exploring new possibilities to learn.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{How Does Q-Learning Work?}
+The general flow is: Initialize Q-table $\rightarrow$ Choose an action $\rightarrow$ Perform action $\rightarrow$ Measure reward $\rightarrow$ Update Q-table $\rightarrow$ Repeat until termination.
+
+\textbf{Step-by-step Process:}
+\begin{enumerate}
+    \item Start at some initial state.
+    \item Agent selects an action.
+    \item Action is executed and the environment responds with feedback.
+    \item Learning Algorithm updates the Q-table.
+    \item Policy gets refined, and the cycle repeats.
+\end{enumerate}
+
+\textbf{Methods of Q-value:} Temporal Difference and Bellman's Equation.\\
+\textbf{What is a Q-table?} It is a memory structure where the agent stores information about which actions yield the best rewards in each state.
+
+% ---------------------------------------------------------
+
+\section{Monte Carlo Methods}
+
+Monte Carlo policy evaluation is a technique that estimates the effectiveness of a policy. It does not require a pre-built model; instead, it learns from the outcomes of the episodes it experiences. Each episode consists of a sequence of states, actions, and rewards.
+
+\subsection{How Monte Carlo Policy Evaluation Works}
+\begin{itemize}
+    \item The method works by running episodes where an agent interacts until it reaches a terminal state.
+    \item At the end of each episode, the algorithm looks back at the states visited and the rewards received to calculate the Return.
+    \item It repeatedly simulates episodes, tracking the total rewards that follow each state and then calculating the average.
+    \item These averages give an estimate of the state value.
+    \item By aggregating the results over many episodes, the method converges to the true value of each state when following the policy.
+    \item Over time, as the agent learns the value of different states, it can refine its policy, favoring actions that lead to higher rewards.
+\end{itemize}
+
+% ---------------------------------------------------------
+
+\section{Proximal Policy Optimization (PPO)}
+
+PPO stands for Proximal Policy Optimization. It helps agents improve their actions while keeping learning stable. It directly updates the policy like other policy gradient methods but uses a clipping rule to limit large, destabilizing changes.
+
+\vspace{2cm}
+\textbf{Parameters in PPO:}
+\begin{enumerate}
+    \item \textbf{Clip range ($\epsilon$):} Controls how much the new policy can deviate from the old.
+    \item \textbf{Learning Rate:} Step size for updating network weights during training.
+    \item \textbf{Discount Factor ($\gamma$):} Determines how much future rewards are valued compared to immediate rewards.
+    \item \textbf{GAE Lambda ($\lambda$):} Balances bias and variance in advantage estimation using Generalized Advantage Estimation.
+    \item \textbf{Number of Epochs:} How many times each batch of data is used for policy updates.
+    \item \textbf{Batch Size:} Number of samples per update, affecting stability and efficiency.
+    \item \textbf{Value Loss Coefficient ($c_1$):} Weight given to the value function loss in the total objective.
+    \item \textbf{Entropy Coefficient ($c_2$):} Encourages exploration by penalizing overconfident, deterministic policies.
+\end{enumerate}
+
+% ---------------------------------------------------------
+
+\section{Deep Deterministic Policy Gradient (DDPG)}
+
+DDPG stands for Deep Deterministic Policy Gradient. It is an algorithm that simultaneously learns two things:
+\begin{enumerate}
+    \item \textbf{A Q-function:} Evaluates how good a particular action is in a particular state. It is trained using off-policy data and the Bellman equation.
+    \item \textbf{A Policy:} Tells the agent what action to take in a given state. It uses the Q-function to learn and improve.
+\end{enumerate}
+
+DDPG is mainly used when dealing with \textbf{continuous action spaces}. In standard Q-learning with discrete actions, finding the optimal action $a^*(s)$ is easy: just calculate the Q-value for each possible action and pick the one with the maximum value:
+\[ a^*(s) = \arg\max_a Q^*(s, a) \]
+
+However, in a continuous action space, there are infinitely many possible actions. Because the space is continuous, the Q-function $Q^*(s, a)$ is presumed to be differentiable with respect to the action $a$.
+\begin{itemize}
+    \item Instead of searching for the action that maximizes the Q-value, DDPG learns a deterministic policy function denoted as $\mu(s)$.
+    \item This policy function acts as an approximator that directly outputs the specific action that should maximize the Q-value.
+    \item Because the Q-function is differentiable, the algorithm can use a simple, efficient gradient-based rule to update the policy $\mu(s)$.
+\end{itemize}
+
+% ---------------------------------------------------------
+
+\section{Soft Actor-Critic (SAC)}
+
+SAC stands for Soft Actor-Critic. Like DDPG, it is used for solving complex continuous control tasks. 
+
+In standard reinforcement learning, the agent's sole objective is to maximize the expected sum of future rewards. SAC alters this by using a \textbf{maximum entropy objective}. The agent is trained to maximize a trade-off between two things:
+\begin{enumerate}
+    \item \textbf{Expected Return:} Earning as much reward as possible.
+    \item \textbf{Entropy:} Acting as randomly as possible while still achieving high rewards.
+\end{enumerate}
+
+\subsection{DDPG vs. SAC}
+The main difference between DDPG and SAC lies in the type of policy they learn:
+\begin{itemize}
+    \item \textbf{DDPG} learns a \textit{deterministic policy}: for a specific state $s$, it will always output the exact same action $a$.
+    \item \textbf{SAC} learns a \textit{stochastic policy}: it outputs a probability distribution over possible actions, promoting better exploration and robustness.
+\end{itemize}
+
+\section{Bellman Equations}
+
+We know, the expected return $G_t$ can be expressed as:
+\[
+G_t = \underbrace{R_{t+1}}_{\text{immediate reward}} + \underbrace{\gamma}_{\text{Discount factor}} R_{t+2} + \gamma^2 R_{t+3} + \dots = R_{t+1} + \gamma G_{t+1}
+\]
+
+\subsection{Derivation of State-Value Function ($V^\pi$)}
+It is the expected return starting from state $s$ and following policy $\pi$.
+
+\textbf{Definition:} $V^\pi(s)$ is defined as the expected total return ($G_t$), we will get if started in state $s$ and follow policy forever.
+\begin{align*}
+V^\pi(s) &= \mathbb{E}_\pi [G_t \mid S_t = s] \\
+&= \mathbb{E}_\pi [R_{t+1} + \gamma G_{t+1} \mid S_t = s]
+\end{align*}
+
+Now, sum over all possible actions the policy could take, and all possible next states and rewards the environment could return:
+\[
+V^\pi(s) = \underbrace{\sum_{a}}_{\substack{\text{iterate} \\ \text{over all} \\ \text{action space}}} \underbrace{\pi(a \mid s)}_{\substack{\text{current} \\ \text{policy}}} \underbrace{\sum_{s', r}}_{\substack{\text{next state, } \\ \text{immediate reward} \\ \text{(iterate over all} \\ \text{possible cases)}}} p(s', r \mid s, a) \left[ r + \gamma \underbrace{\mathbb{E}_\pi[G_{t+1} \mid S_{t+1} = s']}_{V^\pi(s')} \right]
+\]
+
+\[
+V^\pi(s) = \sum_{a} \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma V^\pi(s') \right]
+\]
+
+\subsection{Derivation of Action-Value Function ($Q^\pi$)}
+It is the expected return starting from state $s$, taking action $a$, and thereafter following policy $\pi$.
+\begin{align*}
+Q^\pi(s, a) &= \mathbb{E}_\pi [G_t \mid S_t = s, A_t = a] \\
+&= \mathbb{E}_\pi [R_{t+1} + \gamma G_{t+1} \mid S_t = s, A_t = a]
+\end{align*}
+
+Here the initial action is fixed so we do not sum over all the actions. We only sum over rewards returned by environment:
+\[
+Q^\pi(s, a) = \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma \underbrace{\mathbb{E}_\pi [G_{t+1} \mid S_{t+1} = s']}_{V^\pi(s')} \right]
+\]
+
+\[
+Q^\pi(s, a) = \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma V^\pi(s') \right]
+\]
+
+\subsection*{Relationship Between V and Q}
+\begin{align*}
+V^\pi(s) &= \sum_{a} \pi(a \mid s) Q^\pi(s, a) \\
+Q^\pi(s, a) &= \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma V^\pi(s') \right]
+\end{align*}
+
+\end{document}

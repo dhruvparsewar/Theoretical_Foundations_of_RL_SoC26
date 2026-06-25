@@ -9,8 +9,8 @@
 \usepackage{amssymb}
 
 % Formatting titles
-\titleformat{\section}{\large\bfseries\color{blue!60!black}}{\thesection}{1em}{}
-\titleformat{\subsection}{\normalsize\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}
+\titleformat{\section}{\large\bfseries\color{black!60!black}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{black!50!black}}{\thesubsection}{1em}{}
 
 \title{\textbf{Reinforcement Learning (RL): Core Concepts}}
 \author{}
@@ -21,58 +21,89 @@
 \maketitle
 \vspace{-1.5cm}
 
-\section*{Reinforcement Learning (RL)}
+\section*{Introduction to Reinforcement Learning}
 \begin{itemize}[label=$\bullet$]
-    \item The main concept on which RL works is an agent learning by trial and error.
-    \item Unlike other types of machine learning, the agent is not explicitly told what the correct action is. It must discover which actions yield the most reward.
-    \item Rewards may be delayed, meaning an action taken now can result in positive or negative rewards much later in the future (after multiple steps in a trajectory).
+    \item \textbf{Core Concept:} RL is based on an agent learning by trial and error. Unlike supervised learning, the agent is not explicitly told what the correct action is; it must discover which actions yield the most reward by interacting with the world.
+    \item \textbf{Reward Hypothesis:} All goals can be described by the maximization of expected total reward. If we want an agent to achieve a specific goal, we must provide rewards to it in such a way that maximizing those rewards corresponds perfectly with achieving the goal.
+    \item \textbf{Delayed Rewards:} Rewards may be delayed, meaning an action taken now can result in positive or negative rewards much later in the future (after multiple steps in a trajectory). This introduces the challenge of \textit{credit assignment}, determining which past actions were responsible for a future outcome.
 \end{itemize}
 
-\section*{Environment \& The Loop}
-\noindent\textbf{Environment:} The world that the agent lives in and interacts with. \\
-\textbf{The Loop:} Agent sees a state $\rightarrow$ takes an action $\rightarrow$ receives a reward signal and the next state from the environment. \\
-The environment can control when to ask the agent to act.
-
-\section*{Key Terms}
-\begin{enumerate}
-    \item \textbf{State ($s$):} A complete description of the world.
-    \item \textbf{Observation ($o$):} A partial description of the state.
-    \item \textbf{Action Space:} The set of all valid actions available to the agent.
-    \item \textbf{Trajectories:} A sequence of states and actions over time.
-    \item \textbf{Policy ($\pi$):} Rule by which agent takes action.
-    \item \textbf{Return ($G$):} Total reward over a trajectory.
-    \item \textbf{Discount Factor ($\gamma$):} Factor to ensure the mathematical sum of future rewards converges.
-\end{enumerate}
-
-\section*{The Elements of Reinforcement Learning}
-
-\subsection*{Policy}
+\section*{The Agent-Environment Interaction}
+\noindent\textbf{Environment:} The world that the agent lives in, interacts with, and learns from. The environment defines the rules of the universe, including state transitions and reward logic. \\
+\textbf{The Loop:} The interaction unfolds in a sequence of discrete time steps, $t = 0, 1, 2, 3, \dots$ At each step $t$:
 \begin{itemize}[label=$\bullet$]
-    \item A policy defines the learning agent's way of behaving at a given time. It is a mapping from the perceived states of the environment to the actions to be taken when in those states.
-    \item A policy can be as simple as a basic lookup table or function, or it can involve extensive computation.
-    \item The policy is the core of the RL agent because it alone is sufficient to determine behavior.
+    \item \textbf{Agent:} Executes an action $A_t$, receives an observation $O_t$, and receives a scalar reward $R_t$.
+    \item \textbf{Environment:} Receives the action $A_t$, updates its internal state, emits the next observation $O_{t+1}$, and emits a scalar reward $R_{t+1}$.
+\end{itemize}
+In summary: The agent sees a state $\rightarrow$ takes an action $\rightarrow$ receives a reward signal and the next state from the environment.
+
+\section*{History, State, and Observability}
+\subsection*{History and State}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{History ($H_t$):} The complete sequence of observations, actions, and rewards up to time $t$: 
+    $$H_t = O_1, R_1, A_1, \dots, A_{t-1}, O_t, R_t$$
+    What happens next depends entirely on the history.
+    \item \textbf{State ($S_t$):} The concise information used to determine what happens next. Formally, state is a function of the history: $S_t = f(H_t)$. It is a complete description of the world, whereas an \textbf{Observation ($O_t$)} is only a partial description.
+    \item \textbf{Trajectories ($\tau$):} A specific sequence of states, actions, and rewards over an episode.
 \end{itemize}
 
-\subsection*{Return}
+\subsection*{Types of State}
 \begin{itemize}[label=$\bullet$]
-    \item It is the Reward signal which defines the immediate goal of the RL problem.
-    \item If an action chosen by the policy is followed by low reward, the policy will be updated to select a different action in that situation next time.
+    \item \textbf{Environment State ($S_t^e$):} The environment's private representation. It contains whatever data the environment uses to pick the next observation/reward. It is not usually visible to the agent and often contains irrelevant or redundant information.
+    \item \textbf{Agent State ($S_t^a$):} The agent's internal representation. It contains whatever information the agent uses to pick the next action. This is the information used and updated by RL algorithms.
+    \item \textbf{Information State (Markov State):} Contains all useful information from the history. A state $S_t$ is Markov if and only if it follows the Markov Property: 
+    $$P[S_{t+1} | S_t] = P[S_{t+1} | S_1, \dots, S_t]$$
+    \textit{"The future is independent of the past given the present."} Once the Markov state is known, the history may be thrown away.
 \end{itemize}
 
-\subsection*{Value Functions}
-Functions that estimate the expected return to predict how good a situation is:
+\subsection*{Observability}
 \begin{itemize}[label=$\bullet$]
-    \item \textbf{State-Value Function ($V$):} Measures how good it is to be in a specific state.
-    \item \textbf{Action-Value Function ($Q$):} Measures how good it is to take a specific action in a specific state.
-    \item \textbf{Optimal Value Functions ($V^*, Q^*$):} The maximum possible expected return an agent can achieve.
+    \item \textbf{Fully Observable Environments:} The agent directly observes the complete environment state ($O_t = S_t^a = S_t^e$). This is formally modeled as a \textbf{Markov Decision Process (MDP)}.
+    \item \textbf{Partially Observable Environments:} The agent indirectly observes the environment (e.g., a robot with limited camera vision). Here, $S_t^a \neq S_t^e$. Formally, this is a \textbf{Partially Observable Markov Decision Process (POMDP)}. The agent must construct its own state representation, perhaps using beliefs or recurrent neural networks.
 \end{itemize}
 
-\subsection*{Exploration vs. Exploitation}
+\section*{Major Components of an RL Agent}
+An RL agent typically includes one or more of the following key elements, operating within an \textbf{Action Space} ($\mathcal{A}$), which is the set of all valid actions available to the agent.
+
+\subsection*{1. Policy ($\pi$)}
 \begin{itemize}[label=$\bullet$]
-    \item The fundamental trade-off the agent faces while learning.
-    \item \textbf{Exploration:} Trying out new, untested actions to gather more information about the environment.
-    \item \textbf{Exploitation:} Using known information to choose the action that is currently expected to yield the highest reward.
-    \item An agent must balance both i.e. exploring too much wastes time, but exploiting too early means missing out on potentially better strategies.
+    \item The agent's behavior function, serving as a map from the perceived states of the environment to the actions to be taken. It is the core of the RL agent.
+    \item \textbf{Deterministic Policy:} $a = \pi(s)$. Maps a state exactly to one specific action.
+    \item \textbf{Stochastic Policy:} $\pi(a|s) = P[A_t = a | S_t = s]$. Outputs a probability distribution over actions, which is highly useful for exploration.
+\end{itemize}
+
+\subsection*{2. Reward ($R$) and Return ($G$)}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Reward Signal:} Defines the immediate, short-term goal of the RL problem. 
+    \item \textbf{Return ($G_t$):} The total expected cumulative reward from time step $t$.
+    \item \textbf{Discount Factor ($\gamma \in [0, 1]$):} A mathematical factor used to ensure the sum of future rewards converges in infinite-horizon problems, and to represent uncertainty about the future. The discounted return is defined as:
+    $$G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \dots = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}$$
+    If $\gamma = 0$, the agent is myopic (only cares about immediate reward). As $\gamma$ approaches 1, the agent becomes farsighted.
+\end{itemize}
+
+\subsection*{3. Value Functions}
+Functions that predict the expected return to evaluate the goodness or badness of situations, helping the agent select between actions:
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{State-Value Function ($V_\pi(s)$):} Measures how good it is to be in a specific state $s$ under policy $\pi$.
+    $$V_\pi(s) = \mathbb{E}_\pi [G_t \mid S_t = s]$$
+    \item \textbf{Action-Value Function ($Q_\pi(s, a)$):} Measures how good it is to take a specific action $a$ in state $s$ under policy $\pi$.
+    $$Q_\pi(s, a) = \mathbb{E}_\pi [G_t \mid S_t = s, A_t = a]$$
+    \item \textbf{Optimal Value Functions ($V^*, Q^*$):} Represent the maximum possible expected return an agent can achieve across all possible policies.
+\end{itemize}
+
+\subsection*{4. Model (Optional)}
+\begin{itemize}[label=$\bullet$]
+    \item The agent's internal representation used to predict what the environment will do next. Agents that use models are called \textbf{Model-Based} (using planning), while those that don't are \textbf{Model-Free} (learning directly from experience).
+    \item \textbf{Transitions (Dynamics):} Predicts the next state: $\mathcal{P}_{ss'}^a = P[S_{t+1}=s' \mid S_t=s, A_t=a]$.
+    \item \textbf{Rewards:} Predicts the next immediate reward: $\mathcal{R}_s^a = \mathbb{E}[R_{t+1} \mid S_t=s, A_t=a]$.
+\end{itemize}
+
+\section*{Exploration vs. Exploitation}
+This is the fundamental trade-off the agent faces while learning:
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Exploration:} Trying out new, untested actions to gather more information about the environment. This helps discover better long-term strategies.
+    \item \textbf{Exploitation:} Using known information to choose the action that is currently expected to yield the highest reward to maximize short-term gains.
+    \item \textbf{Common Strategies:} A standard approach to balance this is the \textbf{$\epsilon$-greedy} strategy, where the agent exploits the best known action with probability $1-\epsilon$, and explores a random action with probability $\epsilon$.
 \end{itemize}
 
 \end{document}
