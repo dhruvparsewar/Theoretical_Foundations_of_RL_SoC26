@@ -1,0 +1,93 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Value Function Approximation and DQN}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\subsection*{Why Tabular Methods Fail?}
+\begin{itemize}[label=$\bullet$]
+    \item Up until now, we have studied algorithms like standard Q-Learning and SARSA, which rely on a Q-table. A Q-table requires a distinct row for every possible state.
+    \item The problem with these tabular methods is that the number of possible states can be astronomically large, making it impossible to store a complete table.
+    \item To solve this problem, we must move from \textit{memorization} to \textit{generalization}.
+    \item The agent should not repeatedly learn from scratch for states with similar surroundings; it should generalize its knowledge across similar states.
+\end{itemize}
+
+\subsection*{Value Function Approximation}
+\begin{itemize}[label=$\bullet$]
+    \item Instead of using a lookup table, we represent the Q-value as a parameterized mathematical function:
+    $$Q(s, a) \approx Q(s, a; \theta)$$
+    where $\theta$ represents the parameters (or weights) of our function.
+\end{itemize}
+
+\subsection*{Linear vs. Non-Linear Approximators}
+\begin{enumerate}
+    \item \textbf{Linear Approximators:} We manually extract features from the state ($\phi(s)$) and multiply them by our weights: 
+    $$Q(s, a; \theta) = \theta^\top \phi(s, a)$$
+    \begin{itemize}[label=$\bullet$]
+        \item This approach is mathematically stable and guaranteed to converge.
+    \end{itemize}
+    \item \textbf{Non-Linear Approximators (Neural Networks):} We pass the raw state into a Deep Neural Network (DNN), and it outputs the Q-values.
+    \begin{itemize}[label=$\bullet$]
+        \item Here, the network learns and extracts the features on its own.
+    \end{itemize}
+\end{enumerate}
+
+\subsection*{Gradient Descent in RL}
+\begin{itemize}[label=$\bullet$]
+    \item To train our approximator, we need to update our weights $\theta$ to minimize our errors. We use Gradient Descent for this. 
+    \item We define a loss function (which measures how far off our prediction is from the target) and update $\theta$ in the direction that reduces this loss:
+    $$\theta \leftarrow \theta - \alpha \nabla_\theta \text{Loss}(\theta)$$
+\end{itemize}
+
+\subsection*{The DQN Loss Function}
+\begin{itemize}[label=$\bullet$]
+    \item Deep Q-Networks (DQN) train the neural network by minimizing the Mean Squared Error (MSE) between the network's current Q-value prediction and the Bellman TD Target.
+    \item The loss function $L(\theta)$ at iteration $i$ is defined as:
+    $$L_i(\theta_i) = \mathbb{E}_{(s, a, r, s') \sim U(D)} \left[ \left( r + \gamma \max_{a'} Q(s', a'; \theta_i^-) - Q(s, a; \theta_i) \right)^2 \right]$$
+    \item \textbf{Where:}
+    \begin{itemize}[label=$\circ$]
+        \item $\theta_i$: The weights of the primary Q-network we are currently training.
+        \item $\theta_i^-$: The weights of the separate Target Network.
+        \item $U(D)$: Random uniform sampling from the Experience Replay Buffer ($D$).
+        \item $r + \gamma \max_{a'} Q(s', a'; \theta_i^-)$: The TD Target (what we want our network to output).
+        \item $Q(s, a; \theta_i)$: The current prediction from our primary network.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Why Experience Replay Helps?}
+\begin{itemize}[label=$\bullet$]
+    \item In RL, an agent generally learns from consecutive frames of an episode.
+    \item This data is highly correlated.
+    \item If you feed highly correlated, sequential data into a neural network, it will overfit to that specific sequence and fail to generalize.
+    \item \textbf{Solution:} The agent stores all its experiences $(s, a, r, s')$ in a massive dataset called the \textit{Experience Replay Buffer}. 
+    \item During training, the network pulls random mini-batches of data from this buffer. This breaks the temporal correlation of the data, satisfying the neural network's requirement for independent and identically distributed (i.i.d.) data.
+\end{itemize}
+
+\subsection*{Why Target Networks Help?}
+\begin{itemize}[label=$\bullet$]
+    \item In standard Q-learning, the agent updates its value estimate based on its estimate of the next state.
+    \item If you use the exact same neural network to calculate both the prediction and the target, the target shifts every single time the network's weights update.
+    \item This is known as the \textbf{"moving target" problem}, and it causes feedback loops that make the network spiral out of control.
+    \item \textbf{Solution:} DQN splits the architecture into two separate networks:
+    \begin{enumerate}
+        \item The \textbf{primary network} ($\theta$) is updated continuously.
+        \item The \textbf{Target Network} ($\theta^-$) is a frozen clone of the primary network, used only to calculate the TD target.
+    \end{enumerate}
+    \item Because of this separation, the targets remain stationary and stable while the primary network learns.
+\end{itemize}
+
+\end{document}

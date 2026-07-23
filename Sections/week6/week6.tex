@@ -1,0 +1,151 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Policy Gradient Methods}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\vspace{0.5cm}
+
+\section*{Policy Gradient Methods}
+\begin{itemize}[label=$\bullet$]
+    \item Policy Gradient methods bypass value functions as the primary decision-maker.
+    \item Instead, they directly parameterize the policy and optimize it using gradient ascent.
+    \item In Policy Gradient (PG) methods, we represent the policy $\pi$ using a parameterized function (usually a neural network) with weights $\theta$.
+    \item The policy outputs a probability distribution over actions for a given state:
+    $$\pi_\theta(a \mid s) = \mathbb{P}[A_t = a \mid S_t = s, \theta]$$
+\end{itemize}
+
+\subsection*{Advantages over action-value methods like DQN:}
+\begin{enumerate}
+    \item DQN struggles with continuous actions because finding the maximum Q-value requires an exhaustive search or complex optimization at every single step.
+    \begin{itemize}[label=$\circ$]
+        \item PG methods simply output the parameters of a continuous distribution (like the mean and variance of a Gaussian).
+    \end{itemize}
+    \item Q-learning always learns a deterministic policy.
+    \begin{itemize}[label=$\circ$]
+        \item PG methods can learn optimal stochastic policies too.
+    \end{itemize}
+    \item Small changes in Q-values can cause the action selection to drastically flip, causing unstable training.
+    \begin{itemize}[label=$\circ$]
+        \item Small changes in policy parameters $\theta$ smoothly change the action probabilities.
+    \end{itemize}
+\end{enumerate}
+
+\section*{The Policy Gradient Theorem (Derivation)}
+
+\subsection*{1. Defining Aim}
+\begin{itemize}[label=$\bullet$]
+    \item We want our agent to maximize its total reward.
+    \item Let's call a full episode a \textit{trajectory}, represented by $\tau$. 
+    \item The total reward for a trajectory is $R(\tau)$.
+    \item The probability of a specific trajectory happening, given our current policy weights $\theta$, is $P(\tau \mid \theta)$.
+    \item Our objective function $J(\theta)$ is simply the expected return over all possible trajectories:
+    $$J(\theta) = \int P(\tau \mid \theta) R(\tau) d\tau$$
+\end{itemize}
+
+\subsection*{2. Maximizing the Objective}
+\begin{itemize}[label=$\bullet$]
+    \item To maximize this objective using gradient ascent, we need to find the gradient (derivative) with respect to our policy parameters $\theta$.
+    \item Since the reward $R(\tau)$ comes from the environment and does not depend on $\theta$, we only take the gradient of the probability:
+    $$\nabla_\theta J(\theta) = \int \nabla_\theta P(\tau \mid \theta) R(\tau) d\tau$$
+    \item Now we need this equation to be an expectation so we can estimate it by simply letting our agent play the game.
+    \item We know the log-derivative trick:
+    $$\nabla \log(x) = \frac{\nabla x}{x}$$
+    \item On rearranging, we get:
+    $$\nabla x = x \nabla \log(x)$$
+    \item Now, replacing $x$ with our probability $P(\tau \mid \theta)$:
+    $$\nabla_\theta P(\tau \mid \theta) = P(\tau \mid \theta) \nabla_\theta \log P(\tau \mid \theta)$$
+    \item Substituting this back into our integral:
+    $$\nabla_\theta J(\theta) = \int P(\tau \mid \theta) \nabla_\theta \log P(\tau \mid \theta) R(\tau) d\tau$$
+    \item Because we have $P(\tau \mid \theta)$ multiplying everything again, this is now an expectation:
+    $$\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \nabla_\theta \log P(\tau \mid \theta) R(\tau) \right]$$
+\end{itemize}
+
+\subsection*{3. What $\nabla_\theta \log P(\tau \mid \theta)$ actually is}
+\begin{itemize}[label=$\bullet$]
+    \item What is the probability of a trajectory $P(\tau \mid \theta)$? It is the product of three things:
+    \begin{enumerate}
+        \item The probability of the starting state: $P(s_0)$
+        \item The probability of the agent's actions (our policy): $\pi_\theta(a_t \mid s_t)$
+        \item The probability of the environment's transitions: $P(s_{t+1} \mid s_t, a_t)$
+    \end{enumerate}
+    \item Therefore, on simplifying with logarithms and substituting:
+    $$\log P(\tau \mid \theta) = \log P(s_0) + \sum_{t=0}^T \log \pi_\theta(a_t \mid s_t) + \sum_{t=0}^T \log P(s_{t+1} \mid s_t, a_t)$$
+\end{itemize}
+
+\subsection*{4. Eliminating the Environment Dynamics}
+\begin{itemize}[label=$\bullet$]
+    \item We take the gradient of the entire log sum with respect to $\theta$.
+    \item The environment's starting state ($s_0$) and transition probabilities ($P(s_{t+1} \mid s_t, a_t)$) have absolutely nothing to do with our policy weights $\theta$. 
+    \item Therefore, their derivatives are exactly zero!
+    \item All that survives the gradient is our policy:
+    $$\nabla_\theta \log P(\tau \mid \theta) = \sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_t \mid s_t)$$
+\end{itemize}
+
+\subsection*{5. The Final Equation}
+$$\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_t \mid s_t) R(\tau) \right]$$
+
+\begin{itemize}[label=$\bullet$]
+    \item To improve your policy, you take the gradient of the log probability of your actions and multiply it by the total reward $R(\tau)$. 
+    \item If the reward is high, the gradient steps in a direction that makes those actions more likely. 
+    \item If the reward is low or negative, it pushes those actions away.
+\end{itemize}
+
+\section*{The REINFORCE Algorithm}
+\begin{itemize}[label=$\bullet$]
+    \item REINFORCE is the most fundamental Monte Carlo Policy Gradient algorithm.
+    \item It takes the Policy Gradient Theorem and applies it in a practical, sample-based way.
+    \item Instead of computing the true mathematical expectation, the agent plays an entire episode to generate a sample trajectory.
+    \item At each time step $t$, it updates the policy weights $\theta$ using the actual return from that time step onward ($G_t$).
+    \item $G_t$ acts as a scalar multiplier:
+    \begin{itemize}[label=$\circ$]
+        \item If the return $G_t$ was highly positive, we take a big step in that direction, making that action much more likely in the future.
+        \item If the return $G_t$ was negative (or very small), we push the probability of that action down.
+    \end{itemize}
+\end{itemize}
+
+\noindent\textbf{The REINFORCE Update Rule:}
+$$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(A_t \mid S_t) G_t$$
+
+\section*{REINFORCE with Baseline and Variance Reduction}
+\begin{itemize}[label=$\bullet$]
+    \item The standard REINFORCE algorithm works, but it suffers from extreme variance.
+    \item Because $G_t$ depends on a long sequence of random actions and state transitions, the returns can fluctuate wildly from one episode to the next.
+    \item We can significantly reduce this variance by subtracting a \textbf{baseline} $b(s)$ from the return.
+    \item The baseline can be any function, as long as it does not depend on the action $a$.
+\end{itemize}
+
+\noindent\textbf{The Baseline Update Rule:}
+$$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(A_t \mid S_t) (G_t - b(S_t))$$
+
+\subsection*{Why the Baseline is Unbiased?}
+\begin{itemize}[label=$\bullet$]
+    \item Subtracting a random number from our return would not break the math and bias our gradient because the expected value of the baseline term is exactly zero.
+\end{itemize}
+
+\subsection*{Variance Reduction}
+\begin{itemize}[label=$\bullet$]
+    \item While any baseline works mathematically, the most effective baseline is the state-value function $V(s)$, which represents the average expected return from state $s$.
+    \item When we substitute $V(s)$ into our equation, the multiplier becomes:
+    $$A_t = G_t - V(S_t)$$
+    This term is called the \textbf{Advantage}.
+    \item If $G_t > V(S_t)$, the action we took resulted in a return better than average. The Advantage is positive, and the probability of that action is pushed heavily upwards.
+    \item If $G_t < V(S_t)$, the action resulted in a return worse than average. The Advantage is negative, and the probability of that action is penalized and pushed down.
+    \item By centering the returns around zero, the variance of the gradients shrinks dramatically, allowing the policy network to learn much faster and far more stably.
+\end{itemize}
+
+\end{document}

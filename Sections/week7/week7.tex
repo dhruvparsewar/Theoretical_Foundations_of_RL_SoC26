@@ -1,0 +1,143 @@
+\documentclass[12pt]{article}
+
+% Packages for math, formatting, and layout
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Set page margins
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Week 7: Planning, Exploration, and Advanced RL}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\vspace{0.5cm}
+
+\section*{Planning and the Dyna-Q Framework}
+\begin{itemize}[label=$\bullet$]
+    \item In classical reinforcement learning, we have two primary ways to figure out a policy:
+    \begin{enumerate}
+        \item \textbf{Model-Free Learning:} The agent interacts with the real environment and learns purely from trial and error like Q-Learning and SARSA.
+        \item \textbf{Model-Based Planning:} The agent already knows the rules of the environment (the transition matrix and reward function) and computes the optimal policy without taking real actions like Value Iteration and Policy Iteration.
+    \end{enumerate}
+    \item The Dyna-Q Algorithm integrates both approaches into a single, highly efficient architecture. It allows an agent to learn a model of the world while it interacts with it, and then use that model to simulate experiences to speed up learning.
+\end{itemize}
+
+\subsection*{How Dyna-Q Works}
+\begin{enumerate}
+    \item \textbf{Direct RL (Learning):} 
+    \begin{itemize}[label=$\circ$]
+        \item The agent takes an action $A$ in state $S$, observes reward $R$ and next state $S'$.
+        \item It updates its Q-table using standard Q-learning.
+    \end{itemize}
+    \item \textbf{Model Learning:} 
+    \begin{itemize}[label=$\circ$]
+        \item The agent records this specific transition in its internal model (e.g., "When I am in $S$ and do $A$, I end up in $S'$ and get $R$").
+    \end{itemize}
+    \item \textbf{Planning:} 
+    \begin{itemize}[label=$\circ$]
+        \item The agent stops interacting with the real world for a moment.
+        \item It randomly samples previously visited states and actions from its internal model, predicts what the outcome would be, and updates its Q-table based on these simulated experiences.
+    \end{itemize}
+\end{enumerate}
+
+\section*{Exploration Strategies ($\epsilon$-Greedy vs. UCB)}
+\begin{itemize}[label=$\bullet$]
+    \item A core challenge in RL is minimizing the difference between the reward the agent actually accumulated and the reward it could have accumulated if it had acted perfectly from the start, which is called \textbf{regret}.
+\end{itemize}
+
+\subsection*{1) $\epsilon$-Greedy (Uninformed Exploration)}
+\begin{itemize}[label=$\bullet$]
+    \item The agent selects the action with the highest estimated value with probability $1-\epsilon$, and selects a completely random action with probability $\epsilon$.
+    \item It is "blind" exploration. When it decides to explore, it treats all non-optimal actions equally, regardless of whether it has tried them 100 times or 0 times.
+    \item If $\epsilon$ is kept constant, the agent will continue to make suboptimal moves forever, leading to \textbf{linear regret}.
+\end{itemize}
+
+\subsection*{2) Upper Confidence Bound (UCB) (Directed Exploration)}
+\begin{itemize}[label=$\bullet$]
+    \item UCB is built on the principle of "Optimism in the Face of Uncertainty".
+    \item It actively seeks out actions that it knows the least about.
+    \item Instead of exploring randomly, it calculates an exploration bonus for every action based on how many times it has been pulled:
+    $$A_t = \text{argmax}_a \left[ Q(a) + c \sqrt{\frac{\ln t}{N(a)}} \right]$$
+    \item \textbf{Where:}
+    \begin{itemize}[label=$\circ$]
+        \item $Q(a)$ is the current estimated value (Exploitation).
+        \item $c$ is the confidence parameter controlling the level of exploration.
+        \item $t$ is the total time steps.
+        \item $N(a)$ is the number of times action $a$ was chosen.
+    \end{itemize}
+    \item If an action hasn't been chosen much, $N(a)$ is small, making the bonus massive.
+    \item Because UCB naturally stops exploring actions once it is confident about their true value, it achieves \textbf{logarithmic regret}.
+\end{itemize}
+
+\section*{Advanced Deep RL}
+\begin{itemize}[label=$\bullet$]
+    \item Classical RL (tables) and basic Deep RL (DQN, REINFORCE) struggle to scale to highly complex, continuous, or noisy environments.
+    \item To solve this, \textbf{Actor-Critic} methods have been developed, which combine the best of both worlds:
+    \begin{enumerate}
+        \item \textbf{The Actor (Policy):} Decides what action to take (like Policy Gradients).
+        \item \textbf{The Critic (Value Function):} Evaluates how good the Actor's action was (like Q-learning), reducing the high variance that plagues pure policy gradients.
+    \end{enumerate}
+\end{itemize}
+
+\subsection*{Three Most Dominant Actor-Critic Algorithms}
+
+\subsubsection*{1) Proximal Policy Optimization (PPO)}
+\begin{itemize}[label=$\bullet$]
+    \item PPO is an \textbf{on-policy} algorithm created by OpenAI.
+    \item Standard policy gradients can take massive, destructive steps that ruin the policy.
+    \item PPO prevents this by using a "clipped surrogate objective function" which strictly limits how much the policy can change in a single update.
+    \item \textbf{Strengths:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{Incredibly Stable:} The clipping mechanism ensures monotonic improvement. It rarely collapses during training.
+        \item \textit{Easy to Tune:} It is highly robust to hyperparameter choices. A standard set of defaults works across a massive variety of environments.
+        \item \textit{Versatile:} Works seamlessly with both continuous and discrete action spaces.
+    \end{itemize}
+    \item \textbf{Weaknesses:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{Sample Inefficient:} Because it is on-policy, it must discard data after using it to update the network. It requires millions of interactions to learn complex tasks.
+        \item \textit{Local Optima:} The strict clipping can sometimes prevent the agent from making the large leaps necessary to escape suboptimal strategies.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{2) Deep Deterministic Policy Gradient (DDPG)}
+\begin{itemize}[label=$\bullet$]
+    \item DDPG is an \textbf{off-policy} algorithm specifically designed for continuous action spaces.
+    \item It extends the ideas of DQN into the continuous domain by using a deterministic actor network that directly outputs a specific action, rather than a probability distribution.
+    \item \textbf{Strengths:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{Sample Efficient:} Because it is off-policy, it uses an Experience Replay buffer, allowing it to reuse past experiences repeatedly.
+        \item \textit{Continuous Control:} Highly effective for physics engines and robotics where actions are precise continuous vectors.
+    \end{itemize}
+    \item \textbf{Weaknesses:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{Brittle Hyperparameters:} Extremely sensitive to the choice of learning rates, exploration noise, and network architecture. It often fails completely if not tuned perfectly.
+        \item \textit{Overestimation Bias:} Just like standard Q-learning, the Critic in DDPG tends to falsely overestimate Q-values, which can severely destabilize the Actor during training.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{3) Soft Actor-Critic (SAC)}
+\begin{itemize}[label=$\bullet$]
+    \item SAC is an \textbf{off-policy} algorithm that operates on the framework of Maximum Entropy RL.
+    \item Instead of just trying to maximize the reward, SAC trains the agent to maximize the reward while acting as randomly as possible.
+    \item \textbf{Strengths:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{State of the Art Sample Efficiency:} It combines the replay buffer benefits of off-policy learning with highly stable updates.
+        \item \textit{Built-in Exploration:} By maximizing entropy, the agent is mathematically forced to explore diverse strategies, preventing it from getting stuck in local optima.
+        \item \textit{Robustness:} Overcomes the brittleness of DDPG. It is highly resilient to hyperparameter changes and automatically tunes its own exploration parameter (the temperature, $\alpha$) during training.
+    \end{itemize}
+    \item \textbf{Weaknesses:}
+    \begin{itemize}[label=$\circ$]
+        \item \textit{Computationally Heavy:} Requires maintaining multiple neural networks, making it slower to train on a per-step basis.
+        \item \textit{Implementation Complexity:} The math and architecture behind the automatic entropy tuning and twin-critic setup are significantly more complex to code from scratch compared to PPO.
+    \end{itemize}
+\end{itemize}
+
+\end{document}

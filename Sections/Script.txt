@@ -1,0 +1,46 @@
+Hello Everyone, My name is Dhruv Parsewar and this is my SOC project on Theoretical Foundations of RL
+To give some context on what I did throughout this project, I started with the fundamentals of RL
+The first week was dedicated to understanding the basic setup: what an agent is, what the environment is, 
+and how an agent learns from its environment without being explicitly told what to do.
+I spent time getting comfortable with the actual variables we work with in RL, like states, actions, and rewards. 
+The whole story summarizes to creating a model which learns by trial and error 
+
+Then I looked at how can we translate these concepts into math. I studied Markov Decision Processes which in my opinion
+is just a formal way to describe the rules of the environment.
+I also learned about classic algorithms like Q-Learning
+To implement my learnings I had also made a Q learning agent, 
+
+IceGrid demo
+
+At this stage, the agent basically uses a giant memory spreadsheet—called a Q-table—to remember which actions give the best rewards in each state.
+But, because a simple spreadsheet cannot scale to complex, real-world problems, we eventually have to replace that table with a Neural Network
+And that leads directly into the main implementation of my project, which was building a Deep Q-Network from scratch.
+
+So now I am going to walk you through a custom implementation of a Deep Q-Network, or DQN, built entirely from scratch using PyTorch.
+
+First of all we will look up the problem statement
+The goal of this project was to validate the mathematics of Value Function Approximation
+In classical Reinforcement Learning, as we saw agents use a 'Q-Table' to memorize the value of every state which fails for real-world problems with infinite state spaces
+We need to prove that we could replace that table with a Neural Network.
+
+To test this without introducing hidden physics bugs, I chose the FrozenLake-v1 environment
+It is a 4x4 grid where the agent must navigate from the start to a goal while avoiding holes
+The mathematical challenge here is the sparse reward structure: 
+the agent receives a +1 reward only if it perfectly reaches the goal, and a 0 everywhere else.
+If you attach a random neural network to this without proper architecture and reward shaping, the gradients vanish instantly, and the agent learns absolutely nothing.
+
+The Proposed Solution:
+To solve this, I implemented the exact DQN architecture in some DeepMind paper
+Sticking a neural network directly into a Reinforcement Learning loop usually causes mathematical divergence
+so To stabilize it, I built three components:
+1) the Approximator Network: Because neural networks cannot process raw integer states, I dynamically mapped the 16 grid states into 16-dimensional one-hot encoded vectors
+The network uses a Multi-Layer Perceptron to output four continuous Q-values, one for each directional action.
+2) the Experience Replay Buffer: If an agent learns from consecutive frames, the data is highly correlated, which breaks the independent and identiacally distributed (iid) requirement for neural networks.
+so I built a memory buffer that stores transition tuples—State, Action, Reward, Next State
+During training, the agent samples random mini-batches to break that temporal correlation.
+3) Target Network: Calculating a Bellman target using the same network that is updating its weights would be like chasing a moving target
+I solved this by initializing a second, completely frozen 'Target Network' used exclusively to calculate the maximum future Q-value
+
+Finally, I implemented Reward Shaping, assigning a -1 penalty for holes and a -0.01 penalty for regular steps, similar to my previous implementation
+This forced the Temporal Difference error to be non-zero from step one."
+
